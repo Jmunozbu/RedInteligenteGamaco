@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clasificación en vivo – 3 tomas</title>
+  <style>
+    :root { font-family: system-ui, Roboto, Arial; }
+    body { margin:0; background:#0f172a; color:#e2e8f0; }
+    header { padding:16px 24px; border-bottom:1px solid #334155; }
+    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .card { background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .name { font-size:18px; font-weight:700; margin-bottom:8px; }
+    .class { font-size:28px; font-weight:800; }
+    .meta { margin-top:8px; color:#94a3b8; font-size:14px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2937; font-weight:700; }
+    .ok { color:#86efac; } .warn { color:#fde68a; } .bad { color:#fca5a5; }
+    .cfg { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    input { padding:8px 10px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; width:280px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #334155; background:#111827; color:#e2e8f0; cursor:pointer; }
+    button:hover { background:#0b1220; }
+    small { color:#94a3b8; }
+    @media (max-width:960px){ .grid{grid-template-columns:1fr;} input{width:100%;} }
+    pre { background:#0b1220; border:1px solid #334155; padding:12px; border-radius:10px; max-height:260px; overflow:auto; }
+  </style>
+</head>
+<body>
+<header><div class="wrap">
+  <h2>Clasificación en vivo – 3 tomas</h2>
+  <small>Usa <b>JWT de usuario</b> y <b>Device IDs (UUID)</b>. Keys típicas: <i>class</i> y <i>conf</i>.</small>
+</div></header>
+
+<div class="wrap">
+  <div class="cfg">
+    <input id="host"     placeholder="http://localhost:8080" />
+    <input id="jwt"      placeholder="JWT de usuario (eyJ...)" />
+    <input id="dev1"     placeholder="UUID Toma 1" />
+    <input id="dev2"     placeholder="UUID Toma 2" />
+    <input id="dev3"     placeholder="UUID Toma 3" />
+    <input id="keyClass" placeholder="class" />
+    <input id="keyConf"  placeholder="conf" />
+    <button id="connectBtn">Conectar</button>
+    <button id="seedBtn" title="Leer último por REST">REST seed</button>
+    <span id="statusText" style="margin-left:12px; color:#94a3b8;">Listo.</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="name">Toma 1</div>
+      <div class="class" id="c1_class">—</div>
+      <div class="meta">Confianza: <span id="c1_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c1_time">—</span></div>
+    </div>
+    <div class="card">
+      <div class="name">Toma 2</div>
+      <div class="class" id="c2_class">—</div>
+      <div class="meta">Confianza: <span id="c2_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c2_time">—</span></div>
+    </div>
+    <div class="card">
+      <div class="name">Toma 3</div>
+      <div class="class" id="c3_class">—</div>
+      <div class="meta">Confianza: <span id="c3_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c3_time">—</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px" class="card">
+    <div class="name">Diagnóstico</div>
+    <div class="meta">WS URL: <span id="diagUrl">—</span></div>
+    <div class="meta">Último evento: <span id="lastEvt">—</span></div>
+    <div class="meta">Mensajes WS (crudo):</div>
+    <pre id="rawBox">—</pre>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = id => document.getElementById(id);
+
+  const diagUrl = $('diagUrl');
+  const lastEvt = $('lastEvt');
+  const rawBox  = $('rawBox');
+  const statusT = $('statusText');
+
+  const fmtTs = ts => new Date(ts).toLocaleString();
+
+  function bindTile(idx, cls, conf, ts){
+    const c = $(`c${idx}_class`);
+    const p = $(`c${idx}_conf`);
+    const t = $(`c${idx}_time`);
+    if (!c || !p || !t) return; // defensivo
+
+    c.textContent = (cls ?? '—');
+    t.textContent = ts ? fmtTs(ts) : '—';
+
+    p.classList.remove('ok','warn','bad');
+    if (typeof conf === 'number' && !isNaN(conf)){
+      const pct = Math.round(conf * 100);
+      p.textContent = pct + ' %';
+      if (pct >= 80) p.classList.add('ok');
+      else if (pct >= 50) p.classList.add('warn');
+      else p.classList.add('bad');
+    } else {
+      p.textContent = '—';
+    }
+  }
+
+  function appendRaw(obj){
+    if (!rawBox) return;
+    const txt = typeof obj === 'string' ? obj : JSON.stringify(obj);
+    rawBox.textContent = (txt + '\n' + rawBox.textContent).slice(0, 5000);
+  }
+
+  let ws = null;
+  const keyMap = {}; // subscriptionId -> {kClass, kConf}
+
+  function subCmd(entityId, cmdId, keysCSV){
+    return {
+      tsSubCmds: [{
+        entityType:"DEVICE", entityId, scope:"LATEST_TELEMETRY",
+        cmdId, keys: keysCSV
+      }],
+      historyCmds:[], attrSubCmds:[]
+    };
+  }
+
+  $('connectBtn').addEventListener('click', () => {
+    const host = $('host').value.trim();
+    const jwt  = $('jwt').value.trim();
+    const dev1 = $('dev1').value.trim();
+    const dev2 = $('dev2').value.trim();
+    const dev3 = $('dev3').value.trim();
+    const kC   = $('keyClass').value.trim() || 'class';
+    const kF   = $('keyConf').value.trim()  || 'conf';
+
+    if (!host || !jwt || !dev1 || !dev2 || !dev3){
+      alert('Completa Host, JWT y los 3 Device IDs (UUID).');
+      return;
+    }
+
+    const wsUrl = host.replace(/^http/i,'ws') + '/api/ws/plugins/telemetry?token=' + encodeURIComponent(jwt);
+    if (diagUrl) diagUrl.textContent = wsUrl;
+
+    try { if (ws) ws.close(); } catch(_){}
+    ws = new WebSocket(wsUrl);
+
+    keyMap[1] = {kClass:kC, kConf:kF};
+    keyMap[2] = {kClass:kC, kConf:kF};
+    keyMap[3] = {kClass:kC, kConf:kF};
+
+    ws.onopen = () => {
+      statusT.textContent = 'WS abierto';
+      ws.send(JSON.stringify(subCmd(dev1,1,`${kC},${kF}`)));
+      ws.send(JSON.stringify(subCmd(dev2,2,`${kC},${kF}`)));
+      ws.send(JSON.stringify(subCmd(dev3,3,`${kC},${kF}`)));
+    };
+    ws.onclose = () => { statusT.textContent = 'WS cerrado'; };
+    ws.onerror = (e) => { statusT.textContent = 'WS error'; console.error(e); };
+
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      appendRaw(msg);
+      if (lastEvt) lastEvt.textContent = new Date().toLocaleTimeString();
+
+      // TB manda: {subscriptionId: n, data: { key: [[ts, value], ...], ... } }
+      const sid = msg.subscriptionId ?? msg.cmdId;
+      if (!sid || !msg.data) return;
+
+      const {kClass, kConf} = keyMap[sid] || {};
+      const listC = (msg.data[kClass] || []);
+      const listF = (msg.data[kConf]  || []);
+
+      // Extrae primer par [ts, valor]
+      const pairC = Array.isArray(listC[0]) ? listC[0] : (Array.isArray(listC) && Array.isArray(listC[0]) ? listC[0] : null);
+      const pairF = Array.isArray(listF[0]) ? listF[0] : (Array.isArray(listF) && Array.isArray(listF[0]) ? listF[0] : null);
+
+      const cls  = pairC ? pairC[1] : null;
+      const conf = pairF ? Number(pairF[1]) : null;
+      const ts   = Math.max(pairC ? pairC[0] : 0, pairF ? pairF[0] : 0);
+
+      if (sid === 1) bindTile(1, cls, conf, ts);
+      if (sid === 2) bindTile(2, cls, conf, ts);
+      if (sid === 3) bindTile(3, cls, conf, ts);
+    };
+  });
+
+  // Seed por REST (opcional, para ver “algo” de inmediato)
+  $('seedBtn').addEventListener('click', async () => {
+    const host = $('host').value.trim();
+    const jwt  = $('jwt').value.trim();
+    const ids  = [ $('dev1').value.trim(), $('dev2').value.trim(), $('dev3').value.trim() ];
+    const kC   = $('keyClass').value.trim() || 'class';
+    const kF   = $('keyConf').value.trim()  || 'conf';
+    if (!host || !jwt) return alert('Host y JWT requeridos');
+
+    for (let i=0; i<ids.length; i++){
+      const uuid = ids[i];
+      try{
+        const res = await fetch(`${host}/api/plugins/telemetry/DEVICE/${uuid}/values/timeseries?keys=${encodeURIComponent(kC)},${encodeURIComponent(kF)}`, {
+          headers: { 'X-Authorization': 'Bearer ' + jwt }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        appendRaw({seed:i+1, data});
+        const pairC = data[kC]?.[0] || null;
+        const pairF = data[kF]?.[0] || null;
+        const cls  = pairC ? pairC.value : null;
+        const conf = pairF ? Number(pairF.value) : null;
+        const ts   = Math.max(pairC ? pairC.ts : 0, pairF ? pairF.ts : 0);
+        bindTile(i+1, cls, conf, ts);
+      } catch(err){
+        console.error(err);
+        statusT.textContent = 'REST error (ver consola).';
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>
