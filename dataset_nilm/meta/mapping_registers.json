@@ -1,0 +1,40 @@
+{
+  "REG20001": { "feature": "THDi_L1", "description": "THD Corriente Fase L1 (CH1)", "unit": "%", "phase": "L1" },
+  "REG20002": { "feature": "THDi_L2", "description": "THD Corriente Fase L2 (CH1)", "unit": "%", "phase": "L2" },
+  "REG20003": { "feature": "THDi_L3", "description": "THD Corriente Fase L3 (CH1)", "unit": "%", "phase": "L3" },
+
+  "REG20128": { "feature": "U_L1",   "description": "Tensión Fase L1",           "unit": "V",   "phase": "L1" },
+  "REG20130": { "feature": "U_L2",   "description": "Tensión Fase L2",           "unit": "V",   "phase": "L2" },
+  "REG20132": { "feature": "U_L3",   "description": "Tensión Fase L3",           "unit": "V",   "phase": "L3" },
+
+  "REG20134": { "feature": "U_L1L2", "description": "Tensión Línea L1-L2 (AB)",  "unit": "V",   "phase": "L1-L2" },
+  "REG20136": { "feature": "U_L2L3", "description": "Tensión Línea L2-L3 (BC)",  "unit": "V",   "phase": "L2-L3" },
+  "REG20138": { "feature": "U_L3L1", "description": "Tensión Línea L3-L1 (CA)",  "unit": "V",   "phase": "L3-L1" },
+
+  "REG20140": { "feature": "FREQ",   "description": "Frecuencia de Línea",       "unit": "Hz",  "phase": "ALL" },
+
+  "REG20142": { "feature": "I_L1",   "description": "Corriente Fase L1",         "unit": "A",   "phase": "L1" },
+  "REG20144": { "feature": "I_L2",   "description": "Corriente Fase L2",         "unit": "A",   "phase": "L2" },
+  "REG20146": { "feature": "I_L3",   "description": "Corriente Fase L3",         "unit": "A",   "phase": "L3" },
+  "REG20148": { "feature": "I_ZERO", "description": "Corriente Secuencia Cero",  "unit": "A",   "phase": "ZERO" },
+
+  "REG20150": { "feature": "P_L1",   "description": "Potencia Activa Fase L1",   "unit": "W",   "phase": "L1" },
+  "REG20152": { "feature": "P_L2",   "description": "Potencia Activa Fase L2",   "unit": "W",   "phase": "L2" },
+  "REG20154": { "feature": "P_L3",   "description": "Potencia Activa Fase L3",   "unit": "W",   "phase": "L3" },
+  "REG20156": { "feature": "P_SUM",  "description": "Potencia Activa Total",     "unit": "W",   "phase": "ALL" },
+
+  "REG20158": { "feature": "Q_L1",   "description": "Potencia Reactiva Fase L1", "unit": "VAr", "phase": "L1" },
+  "REG20160": { "feature": "Q_L2",   "description": "Potencia Reactiva Fase L2", "unit": "VAr", "phase": "L2" },
+  "REG20162": { "feature": "Q_L3",   "description": "Potencia Reactiva Fase L3", "unit": "VAr", "phase": "L3" },
+  "REG20164": { "feature": "Q_SUM",  "description": "Potencia Reactiva Total",   "unit": "VAr", "phase": "ALL" },
+
+  "REG20166": { "feature": "S_L1",   "description": "Potencia Aparente Fase L1", "unit": "VA",  "phase": "L1" },
+  "REG20168": { "feature": "S_L2",   "description": "Potencia Aparente Fase L2", "unit": "VA",  "phase": "L2" },
+  "REG20170": { "feature": "S_L3",   "description": "Potencia Aparente Fase L3", "unit": "VA",  "phase": "L3" },
+  "REG20172": { "feature": "S_SUM",  "description": "Potencia Aparente Total",   "unit": "VA",  "phase": "ALL" },
+
+  "REG20174": { "feature": "PF_L1",  "description": "Factor de Potencia Fase L1", "unit": "p.u.", "phase": "L1" },
+  "REG20176": { "feature": "PF_L2",  "description": "Factor de Potencia Fase L2", "unit": "p.u.", "phase": "L2" },
+  "REG20178": { "feature": "PF_L3",  "description": "Factor de Potencia Fase L3", "unit": "p.u.", "phase": "L3" },
+  "REG20180": { "feature": "PF_SUM", "description": "Factor de Potencia Total",   "unit": "p.u.", "phase": "ALL" }
+}
