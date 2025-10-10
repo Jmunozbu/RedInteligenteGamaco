@@ -12,25 +12,25 @@ import paho.mqtt.client as mqtt
 load_dotenv()
 
 # ---- Modbus (ajusta si lo necesitas) ----
-R10_IP         = os.getenv("R10_IP", "192.168.3.1")
-R10_PORT       = int(os.getenv("R10_PORT", "502"))
-SLAVE_ID       = int(os.getenv("SLAVE_ID", "2"))
+R10_IP         = os.getenv("R10_IP")
+R10_PORT       = int(os.getenv("R10_PORT"))
+SLAVE_ID       = int(os.getenv("SLAVE_ID"))
 
 # Lo que usaste en Modbus Poll:
 FUNC           = 4                    # 04 Read Input Registers
-START_ADDR     = int(os.getenv("START_ADDR", "256"))
-QUANTITY       = int(os.getenv("QUANTITY", "54"))  # 54 regs = 27 floats
+START_ADDR     = int(os.getenv("START_ADDR"))
+QUANTITY       = int(os.getenv("QUANTITY"))  # 54 regs = 27 floats
 
 # Decodificación de floats (word order). Prueba "ABCD" (Big/Big) o "CDAB" (Big/Little)
-WORD_ORDER     = os.getenv("WORD_ORDER", "ABCD").upper()
+WORD_ORDER     = os.getenv("WORD_ORDER").upper()
 
 # Intervalo de muestreo (seg)
-POLL_SEC       = float(os.getenv("POLL_SEC", "1.0"))
+POLL_SEC       = float(os.getenv("POLL_SEC"))
 
 # ---- MQTT (local) ----
-MQTT_HOST      = os.getenv("MQTT_HOST", "127.0.0.1")
-MQTT_PORT      = int(os.getenv("MQTT_PORT", "1883"))
-MQTT_TOPIC     = os.getenv("MQTT_TOPIC", "test/r10/data")
+MQTT_HOST      = os.getenv("MQTT_HOST")
+MQTT_PORT      = int(os.getenv("MQTT_PORT"))
+MQTT_TOPIC     = os.getenv("MQTT_TOPIC")
 MQTT_USER      = os.getenv("MQTT_USER", "")
 MQTT_PASS      = os.getenv("MQTT_PASS", "")
 MQTT_QOS       = int(os.getenv("MQTT_QOS", "0"))
