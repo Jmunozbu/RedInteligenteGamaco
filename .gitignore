@@ -1,4 +1,5 @@
-.env
+*.env
+*.db
 dataset_nilm/raw/
 dataset_nilm/processed/
 export.ndjson
