@@ -6,7 +6,7 @@
     "unit_id": 1,
     "word_order": "big_endian",
     "byte_order": "ABCD",
-    "notes": "Continuos CH1 sin THD. float32 en 2 registros (Input Registers, FC=0x04)."
+    "notes": "Continuos CH1 con THD_i añadidos. float32 en 2 registros (variables principales, FC=0x04) y THD_i como int16 con escala 0.01."
   },
   "registers": [
     { "label": "U_L1",   "addr_hex": "0x0100", "addr_dec": 256, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "V",   "quantity": "Voltage",        "phase": "A",    "phase_index": 1, "channel": "CH1", "group": "electrical_continuous", "tags": ["rms","float32"], "range_engineering": [0, 300] },
@@ -42,6 +42,10 @@
     { "label": "PF_L1",  "addr_hex": "0x012E", "addr_dec": 302, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "",    "quantity": "PF",             "phase": "A",    "phase_index": 1, "channel": "CH1", "group": "electrical_continuous", "tags": ["float32"], "range_engineering": [-1, 1] },
     { "label": "PF_L2",  "addr_hex": "0x0130", "addr_dec": 304, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "",    "quantity": "PF",             "phase": "B",    "phase_index": 2, "channel": "CH1", "group": "electrical_continuous", "tags": ["float32"], "range_engineering": [-1, 1] },
     { "label": "PF_L3",  "addr_hex": "0x0132", "addr_dec": 306, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "",    "quantity": "PF",             "phase": "C",    "phase_index": 3, "channel": "CH1", "group": "electrical_continuous", "tags": ["float32"], "range_engineering": [-1, 1] },
-    { "label": "PF_SUM", "addr_hex": "0x0134", "addr_dec": 308, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "",    "quantity": "PF",             "phase": "SUM", "phase_index": 0, "channel": "CH1", "group": "electrical_continuous", "tags": ["float32"], "range_engineering": [-1, 1] }
+    { "label": "PF_SUM", "addr_hex": "0x0134", "addr_dec": 308, "words": 2, "fc": "0x04", "dtype": "float32", "unit": "",    "quantity": "PF",             "phase": "SUM", "phase_index": 0, "channel": "CH1", "group": "electrical_continuous", "tags": ["float32"], "range_engineering": [-1, 1] },
+
+    { "label": "THDi_L1", "addr_hex": "0x0339", "addr_dec": 825, "words": 1, "fc": "0x04", "dtype": "int16", "scale": 0.01, "unit": "%", "quantity": "THD_Current", "phase": "A", "phase_index": 1, "channel": "CH1", "group": "electrical_quality", "tags": ["thd","current"], "range_engineering": [0, 100] },
+    { "label": "THDi_L2", "addr_hex": "0x033A", "addr_dec": 826, "words": 1, "fc": "0x04", "dtype": "int16", "scale": 0.01, "unit": "%", "quantity": "THD_Current", "phase": "B", "phase_index": 2, "channel": "CH1", "group": "electrical_quality", "tags": ["thd","current"], "range_engineering": [0, 100] },
+    { "label": "THDi_L3", "addr_hex": "0x033B", "addr_dec": 827, "words": 1, "fc": "0x04", "dtype": "int16", "scale": 0.01, "unit": "%", "quantity": "THD_Current", "phase": "C", "phase_index": 3, "channel": "CH1", "group": "electrical_quality", "tags": ["thd","current"], "range_engineering": [0, 100] }
   ]
 }

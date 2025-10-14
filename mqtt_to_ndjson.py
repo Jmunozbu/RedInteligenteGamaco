@@ -30,9 +30,8 @@ OUTPUT_MODE   = os.getenv("OUTPUT_MODE", "wide").lower()  # "wide" | "tidy"
 
 # Carga mapping
 mapping = json.loads(MAPPING_PATH.read_text(encoding="utf-8"))
-meta_default_word_order = mapping["meta"].get("byte_order", "ABCD").upper()  # usamos el mismo token ABCD/CDAB/BADC/DCBA
+meta_default_word_order = mapping["meta"].get("byte_order", "ABCD").upper()  # ABCD/CDAB/BADC/DCBA
 reg_list = mapping["registers"]
-# Índice para búsqueda rápida por addr_dec
 meta_by_addr = { int(r["addr_dec"]): r for r in reg_list }
 
 # Dedup por device
@@ -46,8 +45,6 @@ def mqtt_connect():
     return client
 
 def make_decoder(registers, word_order="ABCD"):
-    # registers = lista [hi_word, lo_word] (2 words)
-    # "ABCD" -> BIG/BIG, "CDAB" -> BIG/LITTLE, "BADC" -> LITTLE/BIG, "DCBA" -> LITTLE/LITTLE
     wo = word_order.upper()
     if   wo == "ABCD":
         byteorder, wordorder = Endian.BIG, Endian.BIG
@@ -61,9 +58,34 @@ def make_decoder(registers, word_order="ABCD"):
         byteorder, wordorder = Endian.BIG, Endian.BIG
     return BinaryPayloadDecoder.fromRegisters(registers, byteorder=byteorder, wordorder=wordorder)
 
-def decode_float2(words2, word_order):
-    dec = make_decoder(words2, word_order)
-    return float(dec.decode_32bit_float())
+def decode_value(words, word_order, dtype, scale=1.0, offset=0.0):
+    # words: lista de enteros 0..65535
+    if dtype == "float32":
+        dec = make_decoder(words, word_order)
+        v = float(dec.decode_32bit_float())
+    elif dtype == "uint16":
+        # 1 word
+        v = int(words[0] & 0xFFFF)
+    elif dtype == "int16":
+        w = words[0] & 0xFFFF
+        v = w - 0x10000 if w & 0x8000 else w
+    elif dtype == "uint32":
+        if len(words) < 2:
+            raise ValueError("uint32 requiere 2 words")
+        hi, lo = words[0] & 0xFFFF, words[1] & 0xFFFF
+        v = (hi << 16) | lo
+    elif dtype == "int32":
+        if len(words) < 2:
+            raise ValueError("int32 requiere 2 words")
+        hi, lo = words[0] & 0xFFFF, words[1] & 0xFFFF
+        u = (hi << 16) | lo
+        v = u - 0x100000000 if u & 0x80000000 else u
+    else:
+        # fallback: float32
+        dec = make_decoder(words, word_order)
+        v = float(dec.decode_32bit_float())
+
+    return float(v) * float(scale) + float(offset)
 
 def ensure_day_files(day_str):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -79,7 +101,7 @@ def to_tidy_doc(ts, device, points):
 
 def process_frame(frame: dict):
     """
-    frame esperado desde publisher:
+    frame publisher:
     {
       "ts": "...",
       "slave": 1,
@@ -104,14 +126,18 @@ def process_frame(frame: dict):
     points = []
 
     for addr_dec, meta in meta_by_addr.items():
-        # hallar offset dentro del bloque contiguo:
         idx = addr_dec - start_addr
-        if idx < 0 or (idx + 1) >= len(regs):
-            # está fuera del bloque recibido
+        words = int(meta.get("words", 2))
+        if idx < 0 or (idx + words - 1) >= len(regs):
             continue
-        words2 = [regs[idx], regs[idx+1]]
+
+        dtype = meta.get("dtype", "float32").lower()
+        scale = meta.get("scale", 1.0)
+        offset = meta.get("offset", 0.0)
+
+        wordsN = regs[idx:idx+words]
         try:
-            val = decode_float2(words2, word_order)
+            val = decode_value(wordsN, word_order, dtype=dtype, scale=scale, offset=offset)
         except Exception:
             continue
 
@@ -133,7 +159,6 @@ def process_frame(frame: dict):
     if not labeled:
         return None
 
-    # deduplicado por device
     sig = hashlib.sha1(json.dumps(labeled, sort_keys=True).encode()).hexdigest()
     prev = last_sig_by_dev.get(device)
     if prev == sig:
@@ -144,10 +169,7 @@ def process_frame(frame: dict):
     ensure_day_files(day)
     out_path = OUT_DIR / f"telemetry_{day}.ndjson"
 
-    if OUTPUT_MODE == "tidy":
-        doc = to_tidy_doc(ts, device, points)
-    else:
-        doc = to_wide_doc(ts, device, labeled)
+    doc = to_tidy_doc(ts, device, points) if OUTPUT_MODE == "tidy" else to_wide_doc(ts, device, labeled)
 
     with out_path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(doc, ensure_ascii=False) + "\n")
