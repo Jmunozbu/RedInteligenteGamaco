@@ -1,0 +1,35 @@
+C1- Carga 1 : Computadores
+SUBCAT:	C1_001 
+	C1_002
+
+C2- Iluminación
+
+C3- Motor
+
+
+$env:OUT_DIR="C:\Users\juand\OneDrive\Documents\Uni\2025-2\Gamaco\RED\Medicion\dataset_nilm\raw"
+python .\ndjson_split_by_phase.py
+python .\labeler_add_events.py .\labels.csv
+
+Lx,ts1,ts2,Load1+Load2
+
+$env:DROP_PHASE="1"
+python .\merge_labeled_phases.py
+
+
+Orden cronologico sin mezclar
+$env:OUT_DIR="C:\...\dataset_nilm\raw"
+$env:SHUFFLE="0"
+$env:SORT_BY_TS="1"
+python .\merge_labeled_phases.py
+
+Archivos por dia
+$env:SORT_BY_TS="1"
+$env:GROUP_BY_DAY="1"
+python .\merge_labeled_phases.py
+
+Mezcla reproducible
+$env:SHUFFLE="1"
+$env:SORT_BY_TS="0"
+$env:RANDOM_SEED="1234"
+python .\merge_labeled_phases.py

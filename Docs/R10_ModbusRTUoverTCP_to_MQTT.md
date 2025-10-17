@@ -1,11 +1,11 @@
 # 📘 Configuración y lectura del ADW220 a través del R10 en modo Modbus RTU-over-TCP
 
-## 🧩 Objetivo
-Este documento describe la configuración necesaria para utilizar el **Acrel R10** como pasarela (“gateway”) entre el **analizador ADW220** (Modbus RTU) y un computador o servidor que lea los datos vía **Modbus RTU-over-TCP** y los publique en un **broker MQTT local**.
+## Objetivo
+Este documento describe la configuración necesaria para utilizar el **R10** como pasarela (“gateway”) entre el **analizador ADW220** (Modbus RTU) y un computador o servidor que lea los datos vía **Modbus RTU-over-TCP** y los publique en un **broker MQTT local**.
 
 ---
 
-## 🔌 1. Conexión física
+## 1. Conexión física
 
 | Elemento | Descripción |
 |-----------|--------------|
@@ -20,18 +20,16 @@ Este documento describe la configuración necesaria para utilizar el **Acrel R10
 | B (–)   | B |
 | GND (opcional) | GND |
 
-> ⚠️ Verifica polaridad y resistencia de terminación (120 Ω) si la línea es larga.
-
 ---
 
-## ⚙️ 2. Configuración del R10
+## 2. Configuración del R10
 
-1. Conéctate a la **red Wi-Fi del R10** (por defecto `ACREL_R10_XXXX`).
-2. Entra en el navegador a:  
+1. Conexión a la **red Wi-Fi del R10** o cable Ethernet.
+2. Entrar en el navegador a:  
    ```
    http://192.168.3.1
    ```
-3. Inicia sesión (usuario por defecto `admin / admin`).
+3. Iniciar sesión.
 
 ### 2.1. Parámetros Modbus RTU
 En **Settings → Modbus → RTU**:
@@ -39,18 +37,18 @@ En **Settings → Modbus → RTU**:
 - **Parity:** None (N)
 - **Stop bits:** 1
 - **Data bits:** 8
-- **Modbus address:** (del ADW220, normalmente `2`)
+- **Modbus address:** `2`
 - **Function:** Input Registers (04) o Holding (03) según manual
 
 ### 2.2. Habilitar “Modbus RTU over TCP”
 En **Settings → Modbus TCP**:
-- **Mode:** `RTU over TCP` ✅  
+- **Mode:** `RTU over TCP`  
 - **Port:** `502`
 - **Unit ID passthrough:** habilitado (para que el gateway use el mismo ID del esclavo)
 - **IP del R10:** `192.168.3.1` (por defecto, configurable)
 
 ### 2.3. Verificación
-Prueba con **Modbus Poll** o **QModMaster** desde tu PC:
+Prueba con **Modbus Poll** o **QModMaster** desde el PC:
 
 ```
 Protocol: Modbus RTU/ASCII over TCP/IP
@@ -62,112 +60,112 @@ Start Address: 256
 Quantity: 54
 ```
 
-Si obtienes valores válidos → la pasarela funciona correctamente.
+Si se obtienen valores válidos entonces la pasarela funciona correctamente.
 
 ---
 
-## 🐍 3. Script Python: `rtu_over_tcp_to_mqtt.py`
+## 3. Script Python: `rtu_to_mqtt_raw.py`
 
 El siguiente script:
 1. Se conecta por Modbus RTU-over-TCP al R10.  
-2. Lee 54 registros (27 flotantes IEEE-754).  
-3. Los publica como JSON en un broker MQTT local.
+2. Lee los registros configurados en el mapeo.  
+3. Los publica como JSON en el broker MQTT local.
 
 ### 3.1. Instalación de dependencias
 ```bash
-pip install pymodbus==3.6.6 paho-mqtt==2.1.0 python-dotenv
+pip install requirements.txt
 ```
-
-### 3.2. Código
-Guarda el siguiente archivo como `rtu_over_tcp_to_mqtt.py`:
-
-```python
-<code omitted for brevity>
-```
-
 ---
 
-## ⚙️ 4. Archivo `.env`
+## 4. Archivo `.env`
 
-Crea un archivo llamado `.env` en la misma carpeta:
+Con un archivo llamado `.env` en la misma carpeta:
 
 ```env
+MAPPING_PATH=C:\Users\juand\OneDrive\Documents\Uni\2025-2\Gamaco\RED\Medicion\meta\mapping_registers.json
+AUTO_RANGE_FROM_MAPPING=1
+OUT_DIR=C:\Users\juand\OneDrive\Documents\Uni\2025-2\Gamaco\RED\Medicion\dataset_nilm\raw
+OUTPUT_MODE=wide            
+DEBUG_NDJSON=0             
+DISABLE_DEDUP=0             
+MAX_GAP_TO_MERGE=0        
+MAX_PER_REQ=110          
+
+MQTT_HOST=192.168.3.205
+MQTT_PORT=1883
+
 R10_IP=192.168.3.1
 R10_PORT=502
 SLAVE_ID=2
-START_ADDR=256
-QUANTITY=54
-WORD_ORDER=ABCD
-POLL_SEC=1.0
+FUNC=4                   
+WORD_ORDER=ABCD           
+POLL_SEC=10               
 
-MQTT_HOST=127.0.0.1
-MQTT_PORT=1883
-MQTT_TOPIC=nilm/adw220/ch1
-MQTT_USER=
-MQTT_PASS=
-MQTT_QOS=0
+PUB_MQTT_TOPIC=sensors/adw220/dev01/raw
+PUB_MQTT_USER=
+PUB_MQTT_PASS=             
+PUB_MQTT_QOS=0
+PUB_MQTT_CLIENT_ID=adw_rtu_bridge_dev01        
 
-NAMES=FREQ,U_L1,U_L2,U_L3,U_L1L2,U_L2L3,U_L3L1,I_L1,I_L2,I_L3,I_ZERO,P_L1,P_L2,P_L3,P_SUM,Q_L1,Q_L2,Q_L3,Q_SUM,S_L1,S_L2,S_L3,S_SUM,PF_L1,PF_L2,PF_L3,PF_SUM
+SUB_MQTT_TOPIC=sensors/adw220/+/raw
+SUB_MQTT_USER=
+SUB_MQTT_PASS=
+SUB_MQTT_QOS=0
+SUB_MQTT_CLIENT_ID=adw_ndjson_sub             
 ```
 
 ---
 
-## ▶️ 5. Ejecución
+## 5. Ejecución
 
 ```bash
-python rtu_over_tcp_to_mqtt.py
+python rtu_to_mqtt_raw.py
 ```
 
 El script:
 - Se conecta al R10 vía TCP:502  
 - Lee los registros Modbus del ADW220  
-- Los publica cada `POLL_SEC` segundos en `nilm/adw220/ch1`  
+- Los publica cada `POLL_SEC` segundos en `PUB_MQTT_TOPIC`  
 
 Ejemplo de mensaje publicado:
 ```json
 {
-  "ts": "2025-10-09T18:25:32.012Z",
+  "ts": "2025-10-15T14:01:02.123456+00:00",
+  "device": "adw220",
   "slave": 2,
-  "start_addr": 256,
-  "count": 54,
-  "values": {
-    "FREQ": 60.001,
-    "U_L1": 120.48,
-    "U_L2": 119.93,
-    "U_L3": 121.01
-  }
+  "word_order": "ABCD",
+  "mode": "blocks",
+  "blocks": [
+    {
+      "start_addr": 256,
+      "count": 40,
+      "regs": [123, 456, 789, ...],
+      "func": 4
+    },
+    {
+      "start_addr": 825,
+      "count": 3,
+      "regs": [98, 77, 12],
+      "func": 4
+    }
+  ]
 }
 ```
 
 ---
 
-## ✅ 6. Pruebas y diagnóstico
-
-### MQTT
-Verifica recepción con:
-```bash
-mosquitto_sub -h 127.0.0.1 -t "nilm/adw220/#" -v
-```
-
-### Modbus
-Si obtienes valores incoherentes (e.g. 3.4e38):
-- Cambia `WORD_ORDER=CDAB` en el `.env`
-- Reintenta lectura
-
----
-
-## 📄 7. Integración
+## 6. Integración
 
 Este pipeline permite:
 - Usar el R10 solo como **pasarela Modbus** (sin usar su MQTT interno).  
-- Centralizar el procesamiento en Python y tu broker local.  
-- Guardar y reenviar datos a ThingsBoard, InfluxDB, etc. posteriormente.
+- Centralizar el procesamiento en Python y broker local.  
+- Guardar y reenviar datos donde sean necesarios posteriormente.
 
 ---
 
-## 🧠 8. Referencias
+## 7. Referencias
 
-- Acrel R10 User Manual  
+- R10 User Manual  
 - Acrel ADW220 Communication Manual  
 - Pymodbus 3.6.6 documentation  
 - Paho MQTT client 2.1.0  

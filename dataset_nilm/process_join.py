@@ -8,12 +8,12 @@ from datetime import datetime
 # --- rutas base ---
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "raw"
-META_DIR = BASE_DIR / "meta"
+META_DIR = BASE_DIR / "raw"
 PROCESSED_DIR = BASE_DIR / "processed"
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 # --- cargar mapeo ---
-mapping_path = META_DIR / "mapping_registers.json"
+mapping_path = "C:\Users\juand\OneDrive\Documents\Uni\2025-2\Gamaco\RED\Medicion\meta\mapping_registers.json"
 if not mapping_path.exists():
     raise FileNotFoundError(f"No se encontró {mapping_path}. Crea primero el archivo de mapeo.")
 
