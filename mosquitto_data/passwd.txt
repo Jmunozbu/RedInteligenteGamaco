@@ -2,3 +2,4 @@ r10user:$7$101$73AGVIvXDiuA7rqT$y0kVfoCCo/fRRz8UZvguLw5kA32K/xDCzjeIk6dQwZ2NLBP8
 MSIuser:$7$101$qsWiN+Rw+PyfJawe$BzliNTBA9s//FPjuhU7IIJWzohZVYe/ZtvmfcaipWzeAbAfv8C5KfYHIBf5R9DSffexG/iODw+ZVRbV97FfOiA==
 adw_bridge_user:$7$101$DpFZbLgXIozASxZK$EXo7HMRkcnbsTVyOE6QZ9xl39SxXTML7QmZQjkJH/ACANDrJ/v0t86HJWo65DaK5SXvmpA/qgCUnudmDXxs7JA==
 adw_collector_user:$7$101$L5qMq1OluL91gk+3$MPud3b6UMHrzSpmyWp3ZcWcX6Y9eskZlJZrOWdC92nAfPfta5Jtg0b2grYZ8cdWlmrw3MiU713TAxBiM8kbRvQ==
+infer_collector_user:$7$101$cAgrrrM7IsQv2nKJ$jXI3VHjef4Ecwu9DaDFkVVoJyBFWWoSGHADLbq1cOD6yN/IEX/vybhMmx4LNcCamOzJrh0a8/gZSg+Or8Gk7oA==

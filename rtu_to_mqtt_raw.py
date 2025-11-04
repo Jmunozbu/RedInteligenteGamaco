@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# rtu_over_tcp_to_mqtt.py  (solo direcciones mapeadas, en bloques)
+# rtu_to_mqtt_raw.py  (solo direcciones mapeadas, en bloques)
 import os, json, time, socket
 from pathlib import Path
 from datetime import datetime, timezone

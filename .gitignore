@@ -3,3 +3,4 @@
 dataset_nilm/raw/
 dataset_nilm/processed/
 export.ndjson
+*.gitignore

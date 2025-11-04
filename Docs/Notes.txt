@@ -11,7 +11,7 @@ $env:OUT_DIR="C:\Users\juand\OneDrive\Documents\Uni\2025-2\Gamaco\RED\Medicion\d
 python .\ndjson_split_by_phase.py
 python .\labeler_add_events.py .\labels.csv
 
-Lx,ts1,ts2,Load1+Load2
+Lx,timestamp1,timestamp2,Load1+Load2
 
 $env:DROP_PHASE="1"
 python .\merge_labeled_phases.py
@@ -33,3 +33,6 @@ $env:SHUFFLE="1"
 $env:SORT_BY_TS="0"
 $env:RANDOM_SEED="1234"
 python .\merge_labeled_phases.py
+
+
+{"ts": "2025-10-21T20:28:35.904095+00:00", "device": "adw220", "U_L1": 121.26029205322266, "U_L2": 120.48086547851562, "U_L3": 0.0, "U_L1L2": 209.35433959960938, "U_L2L3": 120.48086547851562, "U_L3L1": 121.26029205322266, "FREQ": 59.96824645996094, "I_L1": 1.6541601419448853, "I_L2": 0.0, "I_L3": 0.0, "I_ZERO": 0.41489604115486145, "P_L1": 95.97804260253906, "P_L2": 0.0, "P_L3": 0.0, "P_SUM": 0.0, "Q_L1": 124.79949951171875, "Q_L2": 0.0, "Q_L3": 0.0, "Q_SUM": 0.0, "S_L1": 200.5834197998047, "S_L2": 0.0, "S_L3": 0.0, "S_SUM": 212.24420166015625, "PF_L1": 0.47809505462646484, "PF_L2": 1.0, "PF_L3": 1.0, "PF_SUM": 0.609222412109375, "THDi_L1": 85.75, "THDi_L2": 0.0, "THDi_L3": 0.0}
