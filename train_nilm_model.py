@@ -47,9 +47,9 @@ X_test_scaled = scaler.transform(X_test)
 
 # === 5. Entrenar modelo ===
 model = XGBClassifier(
-    n_estimators=200,
+    n_estimators=250,
     learning_rate=0.05,
-    max_depth=5,
+    max_depth=8,
     subsample=0.9,
     colsample_bytree=0.9,
     random_state=42,

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clasificación en vivo – 2 tomas (L1/L2)</title>
+  <style>
+    :root { font-family: system-ui, Roboto, Arial; }
+    body { margin:0; background:#0f172a; color:#e2e8f0; }
+    header { padding:16px 24px; border-bottom:1px solid #334155; }
+    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+    .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .card { background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .name { font-size:18px; font-weight:700; margin-bottom:8px; }
+    .class { font-size:28px; font-weight:800; }
+    .meta { margin-top:8px; color:#94a3b8; font-size:14px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2937; font-weight:700; }
+    .ok { color:#86efac; } .warn { color:#fde68a; } .bad { color:#fca5a5; }
+    .cfg { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    input { padding:8px 10px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; width:280px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #334155; background:#111827; color:#e2e8f0; cursor:pointer; }
+    button:hover { background:#0b1220; }
+    small { color:#94a3b8; }
+    @media (max-width:960px){ .grid{grid-template-columns:1fr;} input{width:100%;} }
+    pre { background:#0b1220; border:1px solid #334155; padding:12px; border-radius:10px; max-height:260px; overflow:auto; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    label { font-size:12px; color:#94a3b8; margin-right:6px; }
+  </style>
+  <!-- Cliente MQTT (browser) -->
+  <script src="mqtt.min.js"></script>
+</head>
+<body>
+<header><div class="wrap">
+  <h2>Clasificación en vivo – 2 tomas (L1/L2)</h2>
+  <small>Suscríbete a tópicos MQTT con payload { <i>ts, phase, class, confidence</i> }.</small>
+</div></header>
+
+<div class="wrap">
+  <div class="cfg">
+    <div class="row">
+      <label for="wsurl">WS URL</label>
+      <input id="wsurl" placeholder="ws://localhost:9001/mqtt" value="ws://localhost:9001/mqtt" />
+      <label for="user">User</label>
+      <input id="user"  placeholder="(opcional)" />
+      <label for="pass">Pass</label>
+      <input id="pass"  placeholder="(opcional)" type="password" />
+    </div>
+    <div class="row">
+      <label for="topicL1">Topic L1</label>
+      <input id="topicL1" placeholder="sensors/adw220/dev01/pred/L1" value="sensors/adw220/dev01/pred/L1" />
+      <label for="topicL2">Topic L2</label>
+      <input id="topicL2" placeholder="sensors/adw220/dev01/pred/L2" value="sensors/adw220/dev01/pred/L2" />
+    </div>
+    <div class="row">
+      <button id="connectBtn">Conectar</button>
+      <span id="statusText" style="margin-left:12px; color:#94a3b8;">Listo.</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="name">Toma L1</div>
+      <div class="class" id="c1_class">—</div>
+      <div class="meta">Confianza: <span id="c1_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c1_time">—</span></div>
+      <div class="meta">Topic: <code id="c1_topic">—</code></div>
+    </div>
+    <div class="card">
+      <div class="name">Toma L2</div>
+      <div class="class" id="c2_class">—</div>
+      <div class="meta">Confianza: <span id="c2_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c2_time">—</span></div>
+      <div class="meta">Topic: <code id="c2_topic">—</code></div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px" class="card">
+    <div class="name">Diagnóstico</div>
+    <div class="meta">Broker WS: <span id="diagUrl">—</span></div>
+    <div class="meta">Último evento: <span id="lastEvt">—</span></div>
+    <div class="meta">Mensajes (crudo):</div>
+    <pre id="rawBox">—</pre>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = id => document.getElementById(id);
+  const diagUrl = $('diagUrl');
+  const lastEvt = $('lastEvt');
+  const rawBox  = $('rawBox');
+  const statusT = $('statusText');
+
+  const fmtTs = ts => {
+    const d = (typeof ts === 'number') ? new Date(ts) : new Date(String(ts));
+    return isNaN(d) ? '—' : d.toLocaleString();
+  };
+
+  function bindTile(idx, cls, conf, ts, topic){
+    const c = $(`c${idx}_class`);
+    const p = $(`c${idx}_conf`);
+    const t = $(`c${idx}_time`);
+    const tp= $(`c${idx}_topic`);
+    if (!c || !p || !t) return;
+    c.textContent = (cls ?? '—');
+    t.textContent = ts ? fmtTs(ts) : '—';
+    if (tp) tp.textContent = topic || '—';
+    p.classList.remove('ok','warn','bad');
+    if (typeof conf === 'number' && !isNaN(conf)){
+      const pct = Math.round(conf * 100);
+      p.textContent = pct + ' %';
+      if (pct >= 80) p.classList.add('ok');
+      else if (pct >= 50) p.classList.add('warn');
+      else p.classList.add('bad');
+    } else {
+      p.textContent = '—';
+    }
+  }
+
+  function appendRaw(obj){
+    if (!rawBox) return;
+    const txt = typeof obj === 'string' ? obj : JSON.stringify(obj);
+    rawBox.textContent = (txt + '\n' + rawBox.textContent).slice(0, 6000);
+  }
+
+  let client = null;
+
+  $('connectBtn').addEventListener('click', () => {
+    const url   = $('wsurl').value.trim();        // p.ej. ws://localhost:9001/mqtt
+    const user  = $('user').value.trim();
+    const pass  = $('pass').value;
+    const tL1   = $('topicL1').value.trim();
+    const tL2   = $('topicL2').value.trim();
+
+    if (!url || !tL1 || !tL2){
+      alert('Configura WS URL y ambos tópicos.');
+      return;
+    }
+    if (diagUrl) diagUrl.textContent = url;
+    try { if (client) client.end(true) } catch(_){}
+
+    const opts = {
+      username: user || undefined,
+      password: pass || undefined,
+      keepalive: 30,
+      reconnectPeriod: 2000,
+      clean: true,
+      connectTimeout: 10000
+    };
+    client = mqtt.connect(url, opts);
+
+    client.on('connect', () => {
+      statusT.textContent = 'Conectado';
+      client.subscribe([tL1, tL2], { qos: 0 }, (err) => {
+        if (err) { statusT.textContent = 'Error al suscribir'; return; }
+        $('c1_topic').textContent = tL1;
+        $('c2_topic').textContent = tL2;
+      });
+    });
+
+    client.on('reconnect', () => { statusT.textContent = 'Reconectando…'; });
+    client.on('close', () => { statusT.textContent = 'Cerrado'; });
+    client.on('error', (e) => { console.error(e); statusT.textContent = 'Error'; });
+
+    client.on('message', (topic, payload) => {
+      lastEvt.textContent = new Date().toLocaleTimeString();
+      let obj = null;
+      try { obj = JSON.parse(payload.toString()); } catch(_){}
+      appendRaw(obj || payload.toString());
+
+      // Esperamos: { ts, phase, class, confidence }
+      const ph   = obj?.phase || (topic.endsWith('/L1') ? 'L1' : (topic.endsWith('/L2') ? 'L2' : null));
+      const cls  = obj?.class ?? null;
+      const conf = (typeof obj?.confidence === 'number') ? obj.confidence : null;
+      const ts   = obj?.ts ?? null;
+
+      if (ph === 'L1') bindTile(1, cls, conf, ts, topic);
+      if (ph === 'L2') bindTile(2, cls, conf, ts, topic);
+    });
+  });
+});
+</script>
+</body>
+</html>
