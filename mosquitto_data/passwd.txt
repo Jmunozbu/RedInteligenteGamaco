@@ -4,3 +4,4 @@ adw_bridge_user:$7$101$DpFZbLgXIozASxZK$EXo7HMRkcnbsTVyOE6QZ9xl39SxXTML7QmZQjkJH
 adw_collector_user:$7$101$L5qMq1OluL91gk+3$MPud3b6UMHrzSpmyWp3ZcWcX6Y9eskZlJZrOWdC92nAfPfta5Jtg0b2grYZ8cdWlmrw3MiU713TAxBiM8kbRvQ==
 infer_collector_user:$7$101$cAgrrrM7IsQv2nKJ$jXI3VHjef4Ecwu9DaDFkVVoJyBFWWoSGHADLbq1cOD6yN/IEX/vybhMmx4LNcCamOzJrh0a8/gZSg+Or8Gk7oA==
 ui_read_user:$7$101$XiT/LZZhvxtG8Y/c$u6A1cvxlROot67O5jCOhzyZ4Yk6spwYCI23buloe7qjufUbbUb0h9k25yyo8V/DVvOtTY/mI4E/AKaol5UUy3Q==
+BL441BW:$7$101$lBc2nev33BB6WgOq$PIhn1T8DcMFYbaqMRUf5WhQwkPI97lwlf8v3Mt3BIjXoNAllaTFbN5mOplAp+e+8YNkKXKNAy7KH6Z5YTcCRBQ==

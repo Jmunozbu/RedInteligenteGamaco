@@ -1,0 +1,15 @@
+[Unit]
+Description=NILM Inference (HiveMQ → pred topics)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/nilm-live/backend
+ExecStart=/usr/bin/python3 /opt/nilm-live/backend/infer_from_phase.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

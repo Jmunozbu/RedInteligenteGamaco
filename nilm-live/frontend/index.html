@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clasificación en vivo – L1/L2</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Arial; }
+    body { margin:0; background:#0f172a; color:#e2e8f0; }
+    header { padding:16px 24px; border-bottom:1px solid #334155; display:flex; align-items:center; gap:14px;}
+    header img { height:34px; width:auto; }
+    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+    .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .card { background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .name { font-size:16px; font-weight:700; margin-bottom:6px; color:#cbd5e1;}
+    .class { font-size:28px; font-weight:800; }
+    .meta { margin-top:6px; color:#94a3b8; font-size:13px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2937; font-weight:700; }
+    .ok { color:#86efac; } .warn { color:#fde68a; } .bad { color:#fca5a5; }
+    .cfg { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center; }
+    input { padding:8px 10px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; width:280px; }
+    button { padding:10px 14px; border-radius:10px; border:1px solid #334155; background:#111827; color:#e2e8f0; cursor:pointer; }
+    button:hover { background:#0b1220; }
+    small { color:#94a3b8; }
+    @media (max-width:960px){ .grid{grid-template-columns:1fr;} input{width:100%;} }
+    details { margin-top:16px; }
+    summary { cursor:pointer; color:#94a3b8; }
+    code { color:#cbd5e1; }
+  </style>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+<header class="wrap">
+  <img src="assets/logogrupogamaco.png" alt="Logo"/>
+  <div>
+    <div style="font-weight:800; font-size:18px;">Clasificación en vivo – 2 líneas (L1/L2)</div>
+    <small>Suscríbete a <code>/pred/L1</code> y <code>/pred/L2</code> de tu dispositivo.</small>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cfg">
+    <input id="wsurl" placeholder="wss://<hivemq-host>:8884/mqtt" style="width:360px"
+           value="wss://8c8fef4b1fe449129461c0141702e0cf.s1.eu.hivemq.cloud:8884/mqtt" />
+    <input id="user"  placeholder="user (opcional)" value="BL441BW"/>
+    <input id="pass"  placeholder="pass (opcional)" type="password" value="5Z6y4LR@$a"/>
+    <input id="topicL1" placeholder="pred L1" value="sensors/adw220/dev01/pred/L1" />
+    <input id="topicL2" placeholder="pred L2" value="sensors/adw220/dev01/pred/L2" />
+    <button id="connectBtn">Conectar</button>
+    <small id="statusText" style="margin-left:8px;">Listo.</small>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="name">Línea L1</div>
+      <div class="class" id="c1_class">—</div>
+      <div class="meta">Confianza: <span id="c1_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c1_time">—</span></div>
+      <div class="meta">Topic: <code id="c1_topic">—</code></div>
+    </div>
+    <div class="card">
+      <div class="name">Línea L2</div>
+      <div class="class" id="c2_class">—</div>
+      <div class="meta">Confianza: <span id="c2_conf" class="pill">—</span></div>
+      <div class="meta">Último dato: <span id="c2_time">—</span></div>
+      <div class="meta">Topic: <code id="c2_topic">—</code></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Diagnóstico (opcional)</summary>
+    <div class="card" style="margin-top:8px;">
+      <div class="name">Estado</div>
+      <div class="meta">Broker WS: <span id="diagUrl">—</span></div>
+      <div class="meta">Último evento: <span id="lastEvt">—</span></div>
+      <div class="meta">Mensaje más reciente:</div>
+      <pre id="rawBox" style="background:#0b1220; border:1px solid #334155; padding:12px; border-radius:10px; max-height:180px; overflow:auto;">—</pre>
+    </div>
+  </details>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const $ = id => document.getElementById(id);
+  const fmtTs = x => { const d=new Date(x); return isNaN(d)?'—':d.toLocaleString(); };
+
+  function bindTile(idx, cls, conf, ts, topic){
+    const c = $(`c${idx}_class`), p=$(`c${idx}_conf`), t=$(`c${idx}_time`), tp=$(`c${idx}_topic`);
+    c.textContent = cls ?? '—';
+    t.textContent = ts ? fmtTs(ts) : '—';
+    if (tp) tp.textContent = topic || '—';
+    p.classList.remove('ok','warn','bad');
+    if (typeof conf === 'number' && !isNaN(conf)){
+      const pct = Math.round(conf*100);
+      p.textContent = pct+' %';
+      if (pct>=80) p.classList.add('ok'); else if (pct>=50) p.classList.add('warn'); else p.classList.add('bad');
+    } else { p.textContent='—'; }
+  }
+  function setStatus(s){ $('statusText').textContent = s; }
+  function setDiag(msg){ $('rawBox').textContent = (msg||'').toString(); $('lastEvt').textContent = new Date().toLocaleTimeString(); }
+
+  let client = null;
+  $('connectBtn').addEventListener('click', () => {
+    const url = $('wsurl').value.trim();
+    const user= $('user').value.trim(), pass=$('pass').value;
+    const tL1 = $('topicL1').value.trim(), tL2=$('topicL2').value.trim();
+    if (!url || !tL1 || !tL2){ alert('Configura WS URL y ambos tópicos.'); return; }
+    $('diagUrl').textContent = url;
+    try { if (client) client.end(true) } catch(_){}
+
+    client = mqtt.connect(url, {
+      username: user || undefined,
+      password: pass || undefined,
+      keepalive: 30,
+      reconnectPeriod: 2000,
+      clean: true,
+      connectTimeout: 10000
+    });
+
+    client.on('connect', () => {
+      setStatus('Conectado');
+      client.subscribe([tL1, tL2], {qos:0}, (err)=>{
+        if (err) setStatus('Error al suscribir');
+        $('c1_topic').textContent = tL1;
+        $('c2_topic').textContent = tL2;
+      });
+    });
+    client.on('reconnect', ()=> setStatus('Reconectando…'));
+    client.on('close',     ()=> setStatus('Cerrado'));
+    client.on('error',     ()=> setStatus('Error'));
+
+    client.on('message', (topic, payload) => {
+      let js=null; try{ js=JSON.parse(payload.toString()) }catch(_){}
+      setDiag(js ? JSON.stringify(js) : payload.toString());
+      const ph  = js?.phase || (topic.endsWith('/L1')?'L1':(topic.endsWith('/L2')?'L2':null));
+      const cls = js?.class ?? null;
+      const cf  = typeof js?.confidence === 'number' ? js.confidence : null;
+      const ts  = js?.ts ?? null;
+      if (ph==='L1') bindTile(1, cls, cf, ts, topic);
+      if (ph==='L2') bindTile(2, cls, cf, ts, topic);
+    });
+  });
+});
+</script>
+</body>
+</html>
