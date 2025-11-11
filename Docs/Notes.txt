@@ -46,3 +46,5 @@ Autodesk Tandem
 
 0562332c-21cb-5e58-89d3-082e0b79f387
 wfdVqkblBWCxVJmc1oSxYeVIO1NWd9CHkE6ChlKIfj6Ylvbdy7p1a5SC6o0azbCu
+
+source /opt/red-adw/venv/bin/activate
