@@ -5,36 +5,102 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Clasificación en vivo – L1/L2</title>
   <style>
-    :root { font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Arial; }
-    body { margin:0; background:#0f172a; color:#e2e8f0; }
-    header { padding:16px 24px; border-bottom:1px solid #334155; display:flex; align-items:center; gap:14px;}
-    header img { height:34px; width:auto; }
-    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
-    .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-    .card { background:#111827; border:1px solid #374151; border-radius:16px; padding:18px; box-shadow:0 10px 25px rgba(0,0,0,.25); }
-    .name { font-size:16px; font-weight:700; margin-bottom:6px; color:#cbd5e1;}
-    .class { font-size:28px; font-weight:800; }
-    .meta { margin-top:6px; color:#94a3b8; font-size:13px; }
-    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#1f2937; font-weight:700; }
-    .ok { color:#86efac; } .warn { color:#fde68a; } .bad { color:#fca5a5; }
-    .cfg { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center; }
-    input { padding:8px 10px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#e2e8f0; width:280px; }
-    button { padding:10px 14px; border-radius:10px; border:1px solid #334155; background:#111827; color:#e2e8f0; cursor:pointer; }
-    button:hover { background:#0b1220; }
-    small { color:#94a3b8; }
-    @media (max-width:960px){ .grid{grid-template-columns:1fr;} input{width:100%;} }
-    details { margin-top:16px; }
-    summary { cursor:pointer; color:#94a3b8; }
-    code { color:#cbd5e1; }
+    :root{
+      /* Paleta corporativa propuesta */
+      --bg:#0E2335;        /* azul petróleo profundo (fondo) */
+      --panel:#142E42;     /* panel/tarjeta */
+      --border:#1E3C53;    /* bordes suaves */
+      --text:#E7EEF4;      /* texto principal */
+      --muted:#9EB3C6;     /* texto secundario */
+      --accent:#E9A100;    /* dorado cálido (botones/barras) */
+      --accent-2:#3DB7E4;  /* azul claro vibrante (detalles/hover) */
+      --ok:#6BE69D; --warn:#F7D774; --bad:#E27373;
+      --shadow:0 10px 24px rgba(0,0,0,.26);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial}
+    a{color:inherit}
+    header{border-bottom:1px solid var(--border);background:linear-gradient(0deg,transparent,rgba(255,255,255,.02));}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px 24px}
+
+    /* Header */
+    .head{display:flex;gap:14px;align-items:center;min-height:64px}
+    .brand{display:flex;gap:14px;align-items:center}
+    .brand img{height:42px;width:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+    .title{font-weight:800;font-size:18px;letter-spacing:.2px}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    /* Config */
+    .cfg{
+      background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+      padding:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0;box-shadow:var(--shadow)
+    }
+    input{
+      padding:10px 12px;border-radius:10px;border:1px solid var(--border);
+      background:#0C2235;color:var(--text);min-width:260px;outline:0;
+    }
+    input:focus{border-color:var(--accent-2);box-shadow:0 0 0 2px rgba(61,183,228,.25)}
+    button{
+      padding:10px 16px;border-radius:10px;border:1px solid #C08200;
+      background:var(--accent);color:#1b1b1b;font-weight:800;cursor:pointer;
+    }
+    button:hover{box-shadow:0 0 0 2px rgba(61,183,228,.25)}
+    .status{margin-left:10px;color:var(--muted)}
+
+    /* Tarjetas */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr} input{min-width:unset;width:100%}}
+    .card{
+      background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;
+      box-shadow:var(--shadow);position:relative;overflow:hidden;
+    }
+    .card:before{
+      content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--accent);opacity:.95;
+    }
+    .name{font-size:15px;font-weight:700;margin-bottom:6px;color:#D7E6F1}
+    .class{font-size:30px;font-weight:900;letter-spacing:.2px}
+    .meta{margin-top:6px;color:var(--muted);font-size:13px}
+    code{color:#D7E6F1;background:#0C2235;padding:2px 6px;border-radius:6px;border:1px solid var(--border)}
+
+    /* Pills */
+    .pill{
+      display:inline-block;padding:4px 10px;border-radius:999px;background:#0C2235;
+      border:1px solid var(--border);font-weight:800;
+    }
+    .ok{color:var(--ok);border-color:#2C7A57}
+    .warn{color:var(--warn);border-color:#9A7A20}
+    .bad{color:var(--bad);border-color:#8C3A3A}
+
+    /* Detalles */
+    details{margin-top:18px}
+    summary{cursor:pointer;color:var(--muted)}
+    pre{
+      background:#0C2235;border:1px solid var(--border);padding:12px;border-radius:10px;
+      max-height:180px;overflow:auto;color:#CFE3F5
+    }
+    .brand img {
+  height: 46px;
+  width: auto;
+  filter: brightness(0) invert(1) contrast(105%) saturate(0%)
+          drop-shadow(0 2px 6px rgba(0,0,0,.35));
+}
+@media (max-width: 500px){
+  .brand img { height: 40px; }
+}
   </style>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
-<header class="wrap">
-  <img src="assets/logogrupogamaco.png" alt="Logo"/>
-  <div>
-    <div style="font-weight:800; font-size:18px;">Clasificación en vivo – 2 líneas (L1/L2)</div>
-    <small>Suscríbete a <code>/pred/L1</code> y <code>/pred/L2</code> de tu dispositivo.</small>
+<header>
+  <div class="wrap head">
+    <div class="brand">
+      <img src="assets/logogrupogamaco.png" alt="Logo Gamaco">
+      <div>
+        <div class="title">Clasificación en vivo – L1/L2</div>
+        <div class="subtitle">Suscripción a <code>/pred/L1</code> y <code>/pred/L2</code></div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -42,12 +108,12 @@
   <div class="cfg">
     <input id="wsurl" placeholder="wss://<hivemq-host>:8884/mqtt" style="width:360px"
            value="wss://8c8fef4b1fe449129461c0141702e0cf.s1.eu.hivemq.cloud:8884/mqtt" />
-    <input id="user"  placeholder="user (opcional)" value="BL441BW"/>
-    <input id="pass"  placeholder="pass (opcional)" type="password" value="5Z6y4LR@$a"/>
+    <input id="user" placeholder="user" value="BL441BW"/>
+    <input id="pass" placeholder="pass" type="password" value="5Z6y4LR@$a"/>
     <input id="topicL1" placeholder="pred L1" value="sensors/adw220/dev01/pred/L1" />
     <input id="topicL2" placeholder="pred L2" value="sensors/adw220/dev01/pred/L2" />
     <button id="connectBtn">Conectar</button>
-    <small id="statusText" style="margin-left:8px;">Listo.</small>
+    <span id="statusText" class="status">Listo.</span>
   </div>
 
   <div class="grid">
@@ -68,13 +134,13 @@
   </div>
 
   <details>
-    <summary>Diagnóstico (opcional)</summary>
-    <div class="card" style="margin-top:8px;">
+    <summary>Diagnóstico</summary>
+    <div class="card" style="margin-top:10px">
       <div class="name">Estado</div>
       <div class="meta">Broker WS: <span id="diagUrl">—</span></div>
       <div class="meta">Último evento: <span id="lastEvt">—</span></div>
       <div class="meta">Mensaje más reciente:</div>
-      <pre id="rawBox" style="background:#0b1220; border:1px solid #334155; padding:12px; border-radius:10px; max-height:180px; overflow:auto;">—</pre>
+      <pre id="rawBox">—</pre>
     </div>
   </details>
 </div>
@@ -85,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fmtTs = x => { const d=new Date(x); return isNaN(d)?'—':d.toLocaleString(); };
 
   function bindTile(idx, cls, conf, ts, topic){
-    const c = $(`c${idx}_class`), p=$(`c${idx}_conf`), t=$(`c${idx}_time`), tp=$(`c${idx}_topic`);
+    const c=$(`c${idx}_class`), p=$(`c${idx}_conf`), t=$(`c${idx}_time`), tp=$(`c${idx}_topic`);
     c.textContent = cls ?? '—';
     t.textContent = ts ? fmtTs(ts) : '—';
     if (tp) tp.textContent = topic || '—';
@@ -99,30 +165,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function setStatus(s){ $('statusText').textContent = s; }
   function setDiag(msg){ $('rawBox').textContent = (msg||'').toString(); $('lastEvt').textContent = new Date().toLocaleTimeString(); }
 
-  let client = null;
+  let client=null;
   $('connectBtn').addEventListener('click', () => {
-    const url = $('wsurl').value.trim();
-    const user= $('user').value.trim(), pass=$('pass').value;
-    const tL1 = $('topicL1').value.trim(), tL2=$('topicL2').value.trim();
+    const url=$('wsurl').value.trim(), user=$('user').value.trim(), pass=$('pass').value;
+    const tL1=$('topicL1').value.trim(), tL2=$('topicL2').value.trim();
     if (!url || !tL1 || !tL2){ alert('Configura WS URL y ambos tópicos.'); return; }
     $('diagUrl').textContent = url;
-    try { if (client) client.end(true) } catch(_){}
+    try{ if(client) client.end(true) }catch(_){}
 
     client = mqtt.connect(url, {
       username: user || undefined,
       password: pass || undefined,
-      keepalive: 30,
-      reconnectPeriod: 2000,
-      clean: true,
-      connectTimeout: 10000
+      keepalive:30, reconnectPeriod:2000, clean:true, connectTimeout:10000
     });
 
     client.on('connect', () => {
       setStatus('Conectado');
-      client.subscribe([tL1, tL2], {qos:0}, (err)=>{
+      client.subscribe([tL1,tL2], {qos:0}, (err)=>{
         if (err) setStatus('Error al suscribir');
-        $('c1_topic').textContent = tL1;
-        $('c2_topic').textContent = tL2;
+        $('c1_topic').textContent = tL1; $('c2_topic').textContent = tL2;
       });
     });
     client.on('reconnect', ()=> setStatus('Reconectando…'));
